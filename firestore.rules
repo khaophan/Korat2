@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      // Since there's no public registration, any authenticated user is an admin
+      return isAuthenticated();
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidString(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+             request.resource.data[field].size() >= minLen &&
+             request.resource.data[field].size() <= maxLen;
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidRoute() {
+      return isValidString('number', 1, 10) &&
+             isValidString('name', 1, 100) &&
+             isValidString('color', 4, 20) &&
+             isValidString('origin', 1, 100) &&
+             isValidString('destination', 1, 100) &&
+             request.resource.data.isActive is bool;
+    }
+
+    function isValidReport() {
+      return isValidString('type', 1, 50) &&
+             isValidString('routeId', 1, 50) &&
+             isValidString('description', 1, 1000) &&
+             request.resource.data.status in ['pending', 'confirmed', 'rejected'];
+    }
+
+    function isValidPlace() {
+      return isValidString('name', 1, 100) &&
+             request.resource.data.lat is number &&
+             request.resource.data.lng is number &&
+             isValidString('icon', 1, 50) &&
+             request.resource.data.isActive is bool;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    
+    match /routes/{routeId} {
+      // Public can read routes
+      allow read: if true;
+      // Only admins can create/update/delete routes
+      allow create: if isAdmin() && isValidRoute();
+      allow update: if isAdmin() && isValidRoute();
+      allow delete: if isAdmin();
+    }
+
+    match /places/{placeId} {
+      // Public can read active places
+      allow read: if true;
+      allow create: if isAdmin() && isValidPlace();
+      allow update: if isAdmin() && isValidPlace();
+      allow delete: if isAdmin();
+    }
+
+    match /reports/{reportId} {
+      // Admins can read all reports
+      allow read: if isAdmin();
+      // Public can create reports
+      allow create: if isValidReport();
+      // Only admins can update/delete reports
+      allow update: if isAdmin() && isValidReport();
+      allow delete: if isAdmin();
+    }
+
+    match /activity_logs/{logId} {
+      // Only admins can read and create activity logs
+      allow read: if isAdmin();
+      allow create: if isAdmin() && 
+                    request.resource.data.adminId == request.auth.uid &&
+                    isValidString('action', 1, 50);
+      allow update, delete: if false; // Logs are immutable
+    }
+  }
+}

@@ -1,0 +1,82 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Licenses
+        run: yes | sdkmanager --licenses
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Disable SSR (Fix build mobile)
+        run: |
+          jq 'del(.projects.app.architect.build.options.server, .projects.app.architect.build.options.ssr, .projects.app.architect.build.options.outputMode, .projects.app.architect.build.options.prerender)' angular.json > tmp.json
+          mv tmp.json angular.json
+          rm -f src/main.server.ts src/app/app.config.server.ts server.ts || true
+
+      - name: Build Angular
+        run: npx ng build --configuration production --base-href ./
+
+      - name: Prepare Web
+        id: web
+        run: |
+          FILE=$(find dist -name index.html | head -n 1)
+          DIR=$(dirname "$FILE")
+          rm -rf web
+          mkdir web
+          cp -r "$DIR"/* web/
+
+      - name: Create Capacitor Config
+        run: |
+          echo '{
+            "appId": "com.korat.transit",
+            "appName": "Korat Transit",
+            "webDir": "web",
+            "server": {
+              "androidScheme": "https"
+            }
+          }' > capacitor.config.json
+
+      - name: Install Capacitor
+        run: npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+
+      - name: Add Android
+        run: npx cap add android || true
+
+      - name: Sync
+        run: npx cap sync android
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: korat-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

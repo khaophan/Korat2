@@ -1,0 +1,15 @@
+<div class="min-h-[100dvh] flex flex-col font-sans bg-gray-50">
+  @if (hasNavigation()) {
+    <app-navbar></app-navbar>
+  }
+  
+  <main class="flex-1 pb-16 md:pb-0">
+    <router-outlet></router-outlet>
+  </main>
+
+  @if (hasNavigation()) {
+    <div class="hidden md:block">
+      <app-footer></app-footer>
+    </div>
+  }
+</div>

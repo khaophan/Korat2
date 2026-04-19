@@ -1,0 +1,8 @@
+{
+  "name": "Korat4",
+  "description": "แอปพลิเคชันแผนที่เส้นทางรถสองแถวประจำทางอำเภอเมืองนครราชสีมา พร้อมระบบ Admin และระบบรายงานปัญหา",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}

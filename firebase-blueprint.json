@@ -1,0 +1,108 @@
+{
+  "entities": {
+    "Route": {
+      "title": "Route",
+      "description": "A songthaew route in Korat",
+      "type": "object",
+      "properties": {
+        "number": { "type": "string", "description": "Route number" },
+        "name": { "type": "string", "description": "Route name" },
+        "color": { "type": "string", "description": "Route color (hex)" },
+        "vehicleColors": { 
+           "type": "array", 
+           "items": { "type": "string" },
+           "description": "Colors of the vehicle itself" 
+        },
+        "origin": { "type": "string", "description": "Origin location" },
+        "destination": { "type": "string", "description": "Destination location" },
+        "waypoints": {
+          "type": "array",
+          "description": "List of waypoints/stops",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lat": { "type": "number" },
+              "lng": { "type": "number" },
+              "name": { "type": "string" }
+            }
+          }
+        },
+        "geojson": { "type": "string", "description": "GeoJSON string of the route polyline" },
+        "isActive": { "type": "boolean", "description": "Whether the route is active" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["number", "name", "color", "origin", "destination", "isActive"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "User report about a route or stop",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "description": "Type of problem" },
+        "routeId": { "type": "string", "description": "ID of the related route" },
+        "position": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "description": { "type": "string", "description": "Detailed description" },
+        "imageURL": { "type": "string", "description": "URL of the attached image" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "resolvedAt": { "type": "string", "format": "date-time" },
+        "resolveNote": { "type": "string" }
+      },
+      "required": ["type", "routeId", "description", "status"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Admin activity log",
+      "type": "object",
+      "properties": {
+        "adminId": { "type": "string" },
+        "action": { "type": "string" },
+        "detail": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["adminId", "action", "timestamp"]
+    },
+    "Place": {
+      "title": "Place",
+      "description": "Important Landmark on the map",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "icon": { "type": "string" },
+        "type": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "lat", "lng", "icon", "isActive"]
+    }
+  },
+  "firestore": {
+    "/routes/{routeId}": {
+      "schema": { "$ref": "#/entities/Route" },
+      "description": "Songthaew routes"
+    },
+    "/places/{placeId}": {
+      "schema": { "$ref": "#/entities/Place" },
+      "description": "Important Landmarks"
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/Report" },
+      "description": "User reports"
+    },
+    "/activity_logs/{logId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Admin activity logs"
+    }
+  }
+}
