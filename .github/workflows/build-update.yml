@@ -1,4 +1,4 @@
-name: Build & Update Web
+name: Build & Deploy Update
 
 on:
   push:
@@ -20,16 +20,17 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Disable SSR
+      - name: Disable SSR (Fix build error)
         run: |
-          jq 'del(.projects.app.architect.build.options.server, .projects.app.architect.build.options.ssr, .projects.app.architect.build.options.outputMode, .projects.app.architect.build.options.prerender)' angular.json > tmp.json
-          mv tmp.json angular.json
-          rm -f src/main.server.ts src/app/app.config.server.ts server.ts || true
+          jq 'del(.projects.app.architect.build.options.server, .projects.app.architect.build.options.ssr, .projects.app.architect.build.options.outputMode, .projects.app.architect.build.options.prerender)' angular.json > angular.tmp.json
+          mv angular.tmp.json angular.json
+          rm -f src/main.server.ts src/app/app.config.server.ts src/server.ts || true
 
       - name: Build Angular
-        run: npx ng build --configuration production
+        run: npx ng build --configuration production --base-href ./
 
-      - name: Deploy to Vercel
-        run: |
-          npm install -g vercel
-          vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy to Vercel (AUTO CONFIRM)
+        run: vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
