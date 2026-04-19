@@ -17,10 +17,9 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm install
+      - run: npm install
 
-      - name: Disable SSR (Fix build error)
+      - name: Disable SSR
         run: |
           jq 'del(.projects.app.architect.build.options.server, .projects.app.architect.build.options.ssr, .projects.app.architect.build.options.outputMode, .projects.app.architect.build.options.prerender)' angular.json > angular.tmp.json
           mv angular.tmp.json angular.json
@@ -29,8 +28,12 @@ jobs:
       - name: Build Angular
         run: npx ng build --configuration production --base-href ./
 
-      - name: Install Vercel CLI
+      - name: Install Vercel
         run: npm install -g vercel
 
-      - name: Deploy to Vercel (AUTO CONFIRM)
-        run: vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+      # 🔥 FIX สำคัญ: กำหนด project name เอง
+      - name: Deploy to Vercel
+        run: |
+          vercel --prod --yes \
+          --name korat-transit \
+          --token=${{ secrets.VERCEL_TOKEN }}
